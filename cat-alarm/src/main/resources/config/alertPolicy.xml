@@ -2,8 +2,8 @@
 <alert-policy>
   <type id="Transaction">
     <group id="default">
-      <level id="warning" send="mail,weixin" suspendMinute="5"/>
-      <level id="error" send="mail,weixin" suspendMinute="5"/>
+      <level id="warning" send="mail,weixin,dingding" suspendMinute="5"/>
+      <level id="error" send="mail,weixin,dingding" suspendMinute="5"/>
     </group>
   </type>
   <type id="Event">

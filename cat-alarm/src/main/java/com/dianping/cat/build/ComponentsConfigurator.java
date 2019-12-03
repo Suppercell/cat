@@ -55,6 +55,8 @@ public class ComponentsConfigurator extends AbstractResourceConfigurator {
 
 		all.add(C(Spliter.class, MailSpliter.ID, MailSpliter.class));
 
+		all.add(C(Spliter.class, DingDingSpliter.ID, DingDingSpliter.class));
+
 		all.add(C(Spliter.class, SmsSpliter.ID, SmsSpliter.class));
 
 		all.add(C(Spliter.class, WeixinSpliter.ID, WeixinSpliter.class));
@@ -68,6 +70,8 @@ public class ComponentsConfigurator extends AbstractResourceConfigurator {
 		all.add(C(Sender.class, SmsSender.ID, SmsSender.class).req(SenderConfigManager.class));
 
 		all.add(C(Sender.class, WeixinSender.ID, WeixinSender.class).req(SenderConfigManager.class));
+
+		all.add(C(Sender.class, DingDingSender.ID, DingDingSender.class).req(SenderConfigManager.class));
 
 		all.add(A(SenderManager.class));
 

@@ -18,15 +18,12 @@
  */
 package com.dianping.cat.configuration;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
+import com.dianping.cat.Cat;
+import com.dianping.cat.configuration.client.entity.ClientConfig;
+import com.dianping.cat.configuration.client.entity.Domain;
+import com.dianping.cat.configuration.client.entity.Server;
+import com.dianping.cat.configuration.client.transform.DefaultSaxParser;
+import com.dianping.cat.message.spi.MessageTree;
 import com.site.helper.JsonBuilder;
 import com.site.helper.Splitters;
 import org.codehaus.plexus.logging.LogEnabled;
@@ -37,17 +34,16 @@ import org.unidal.helper.Files;
 import org.unidal.helper.Urls;
 import org.unidal.lookup.annotation.Named;
 
-import com.dianping.cat.Cat;
-import com.dianping.cat.configuration.client.entity.ClientConfig;
-import com.dianping.cat.configuration.client.entity.Domain;
-import com.dianping.cat.configuration.client.entity.Server;
-import com.dianping.cat.configuration.client.transform.DefaultSaxParser;
-import com.dianping.cat.message.spi.MessageTree;
+import java.io.File;
+import java.io.InputStream;
+import java.util.*;
 
 @Named(type = ClientConfigManager.class)
 public class DefaultClientConfigManager implements LogEnabled, ClientConfigManager, Initializable {
 
 	private static final String PROPERTIES_FILE = "/META-INF/app.properties";
+
+	private static final String CAT_CLIENT_XML = "/META-INF/cat/client.xml";
 
 	private ClientConfig m_config;
 
@@ -125,7 +121,7 @@ public class DefaultClientConfigManager implements LogEnabled, ClientConfigManag
 					httpPort = 8080;
 				}
 				return String.format("http://%s:%d/cat/s/router?domain=%s&ip=%s&op=json", server.getIp().trim(), httpPort,
-										getDomain().getId(), NetworkInterfaceManager.INSTANCE.getLocalHostAddress());
+				      getDomain().getId(), NetworkInterfaceManager.INSTANCE.getLocalHostAddress());
 			}
 		}
 		return null;
@@ -157,10 +153,16 @@ public class DefaultClientConfigManager implements LogEnabled, ClientConfigManag
 	@Override
 	public void initialize(File configFile) throws InitializationException {
 		try {
-			ClientConfig globalConfig = null;
+			ClientConfig globalConfig = loadConfigFromXml();
 			ClientConfig warConfig = null;
+			if (globalConfig != null && globalConfig.getDomains() != null) {
+				for (Map.Entry<String, Domain> entry : globalConfig.getDomains().entrySet()) {
+					warConfig = new ClientConfig();
+					warConfig.addDomain(new Domain(entry.getValue().getId()));
+				}
+			}
 
-			if (configFile != null) {
+			if (globalConfig == null && configFile != null) {
 				if (configFile.exists()) {
 					String xml = Files.forIO().readFrom(configFile.getCanonicalFile(), "utf-8");
 
@@ -172,8 +174,9 @@ public class DefaultClientConfigManager implements LogEnabled, ClientConfigManag
 			}
 
 			// load the client configure from Java class-path
-			warConfig = loadConfigFromEnviroment();
-
+			if (warConfig == null) {
+				warConfig = loadConfigFromEnviroment();
+			}
 			// merge the two configures together to make it effected
 			if (globalConfig != null && warConfig != null) {
 				globalConfig.accept(new ClientConfigMerger(warConfig));
@@ -311,6 +314,35 @@ public class DefaultClientConfigManager implements LogEnabled, ClientConfigManag
 		} catch (Exception e) {
 			m_logger.warn("error when connect cat server config url " + url);
 		}
+	}
+
+	private ClientConfig loadConfigFromXml() {
+		InputStream in = null;
+		try {
+			in = Thread.currentThread().getContextClassLoader().getResourceAsStream(CAT_CLIENT_XML);
+
+			if (in == null)
+				in = Cat.class.getResourceAsStream(CAT_CLIENT_XML);
+			String xml;
+			if (in != null) {
+				xml = Files.forIO().readFrom(in, "utf-8");
+
+				this.m_logger.info(
+				      String.format("Resource file(%s) found.", new Object[] { Cat.class.getResource(CAT_CLIENT_XML) }));
+
+				return DefaultSaxParser.parse(xml);
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (in != null)
+				try {
+					in.close();
+				} catch (Exception localException4) {
+				}
+		}
+		return null;
 	}
 
 	@Override

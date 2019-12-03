@@ -26,7 +26,9 @@ public enum AlertChannel {
 
 	WEIXIN("weixin"),
 
-	DX("dx");
+	DX("dx"),
+
+	DINGDING("dingding");
 
 	private String m_name;
 

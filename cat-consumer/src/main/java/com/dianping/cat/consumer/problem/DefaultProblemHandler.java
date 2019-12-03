@@ -18,13 +18,6 @@
  */
 package com.dianping.cat.consumer.problem;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.unidal.helper.Splitters;
-import org.unidal.lookup.annotation.Inject;
-
 import com.dianping.cat.config.server.ServerConfigManager;
 import com.dianping.cat.consumer.problem.model.entity.Entity;
 import com.dianping.cat.consumer.problem.model.entity.Machine;
@@ -33,6 +26,13 @@ import com.dianping.cat.message.Heartbeat;
 import com.dianping.cat.message.Message;
 import com.dianping.cat.message.Transaction;
 import com.dianping.cat.message.spi.MessageTree;
+import com.dianping.cat.support.ProblemErrorCache;
+import org.unidal.helper.Splitters;
+import org.unidal.lookup.annotation.Inject;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class DefaultProblemHandler extends ProblemHandler {
 	public static final String ID = "default-problem";
@@ -60,7 +60,7 @@ public class DefaultProblemHandler extends ProblemHandler {
 		if (!message.getStatus().equals(Message.SUCCESS) && m_errorTypes.contains(message.getType())) {
 			String type = ProblemType.ERROR.getName();
 			String status = message.getName();
-
+			ProblemErrorCache.put(tree.getDomain(),message);
 			Entity entity = findOrCreateEntity(machine, type, status);
 			updateEntity(tree, entity, 0);
 		}
