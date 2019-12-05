@@ -153,16 +153,11 @@ public class DefaultClientConfigManager implements LogEnabled, ClientConfigManag
 	@Override
 	public void initialize(File configFile) throws InitializationException {
 		try {
-			ClientConfig globalConfig = loadConfigFromXml();
+			ClientConfig globalConfig = null;
 			ClientConfig warConfig = null;
-			if (globalConfig != null && globalConfig.getDomains() != null) {
-				for (Map.Entry<String, Domain> entry : globalConfig.getDomains().entrySet()) {
-					warConfig = new ClientConfig();
-					warConfig.addDomain(new Domain(entry.getValue().getId()));
-				}
-			}
 
-			if (globalConfig == null && configFile != null) {
+
+			if (configFile != null) {
 				if (configFile.exists()) {
 					String xml = Files.forIO().readFrom(configFile.getCanonicalFile(), "utf-8");
 
@@ -170,6 +165,14 @@ public class DefaultClientConfigManager implements LogEnabled, ClientConfigManag
 					m_logger.info(String.format("Global config file(%s) found.", configFile));
 				} else {
 					m_logger.warn(String.format("Global config file(%s) not found, IGNORED.", configFile));
+				}
+			}else{
+				globalConfig = loadConfigFromXml();
+				if (globalConfig != null && globalConfig.getDomains() != null) {
+					for (Map.Entry<String, Domain> entry : globalConfig.getDomains().entrySet()) {
+						warConfig = new ClientConfig();
+						warConfig.addDomain(new Domain(entry.getValue().getId()));
+					}
 				}
 			}
 
